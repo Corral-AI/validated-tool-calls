@@ -24,6 +24,7 @@ var cateringSuggestions = new ValidatingAIFunction(
 Show("What the model sees", cateringSuggestions.JsonSchema);
 
 // The calling agent gets problem details, not the chef's fantasy.
+Pause();
 Show("catering_suggestions(40, [Nuts, Gluten]), flamboyant chef",
     await WhatTheModelGets(cateringSuggestions, new { headcount = 40, allergies = new[] { "Nuts", "Gluten" } }));
 
@@ -31,6 +32,7 @@ Show("catering_suggestions(40, [Nuts, Gluten]), flamboyant chef",
 var sensibleSuggestions = new ValidatingAIFunction(
     AIFunctionFactory.Create(SensibleCateringSuggestions, new AIFunctionFactoryOptions { Name = "catering_suggestions" }), services);
 
+Pause();
 Show("catering_suggestions(40, [Nuts, Gluten]), sensible chef",
     await WhatTheModelGets(sensibleSuggestions, new { headcount = 40, allergies = new[] { "Nuts", "Gluten" } }));
 
@@ -68,6 +70,13 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     using var client = new FunctionInvokingChatClient(new OneToolCall(tool.Name, arguments));
     var response = await client.GetResponseAsync("Go.", new ChatOptions { Tools = [tool] });
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
+}
+
+// Waits for Enter, so each example appears when you're ready to talk about it.
+static void Pause()
+{
+    Console.Write("\n[Enter for the next example]");
+    Console.ReadLine();
 }
 
 static void Show(string title, object? value) =>

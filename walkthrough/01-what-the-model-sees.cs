@@ -10,10 +10,12 @@ var orderCatering = AIFunctionFactory.Create(OrderCatering, new AIFunctionFactor
 // This is all the model knows about the tool. The enum names are the only "display" it gets.
 Show("What the model sees", orderCatering.JsonSchema);
 
+Pause();
 Show("order_catering(FruitPlatter, 4)",
     await WhatTheModelGets(orderCatering, new { item = "FruitPlatter", quantity = 4 }));
 
 // A value that isn't in the enum. Binding fails before OrderCatering runs, and this is all the model is told.
+Pause();
 Show("order_catering(ChocolateFountain, 1)",
     await WhatTheModelGets(orderCatering, new { item = "ChocolateFountain", quantity = 1 }));
 
@@ -34,6 +36,13 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     using var client = new FunctionInvokingChatClient(new OneToolCall(tool.Name, arguments));
     var response = await client.GetResponseAsync("Go.", new ChatOptions { Tools = [tool] });
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
+}
+
+// Waits for Enter, so each example appears when you're ready to talk about it.
+static void Pause()
+{
+    Console.Write("\n[Enter for the next example]");
+    Console.ReadLine();
 }
 
 static void Show(string title, object? value) =>

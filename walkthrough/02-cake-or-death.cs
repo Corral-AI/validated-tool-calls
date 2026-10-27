@@ -11,9 +11,11 @@ var cakeOrDeath = AIFunctionFactory.Create(CakeOrDeath, new AIFunctionFactoryOpt
 // [RegularExpression("^(cake|death)$")] shows up as "pattern".
 Show("What the model sees", cakeOrDeath.JsonSchema);
 
+Pause();
 Show("cake_or_death(cake)", await WhatTheModelGets(cakeOrDeath, new { choice = "cake" }));
 
 // "Or chicken?" Nothing checks the pattern, so CakeOrDeath gets it.
+Pause();
 Show("cake_or_death(chicken)", await WhatTheModelGets(cakeOrDeath, new { choice = "chicken" }));
 
 // ── The tool ─────────────────────────────────────────────────────────────
@@ -32,6 +34,13 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     using var client = new FunctionInvokingChatClient(new OneToolCall(tool.Name, arguments));
     var response = await client.GetResponseAsync("Go.", new ChatOptions { Tools = [tool] });
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
+}
+
+// Waits for Enter, so each example appears when you're ready to talk about it.
+static void Pause()
+{
+    Console.Write("\n[Enter for the next example]");
+    Console.ReadLine();
 }
 
 static void Show(string title, object? value) =>

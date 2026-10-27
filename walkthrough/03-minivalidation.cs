@@ -14,13 +14,17 @@ using MiniValidation;
 var cakeOrDeath = new ValidatingAIFunction(
     AIFunctionFactory.Create(CakeOrDeath, new AIFunctionFactoryOptions { Name = "cake_or_death" }));
 
+Show("What the model sees", cakeOrDeath.JsonSchema);
+
 // CakeOrDeath never runs. The model gets problem details it can act on.
+Pause();
 Show("cake_or_death(chicken)", await WhatTheModelGets(cakeOrDeath, new { choice = "chicken" }));
 
 var orderCatering = new ValidatingAIFunction(
     AIFunctionFactory.Create(OrderCatering, new AIFunctionFactoryOptions { Name = "order_catering" }));
 
 // The enum case too: "Error: Function failed." becomes a list of what's allowed.
+Pause();
 Show("order_catering(ChocolateFountain, 1)",
     await WhatTheModelGets(orderCatering, new { item = "ChocolateFountain", quantity = 1 }));
 
@@ -48,6 +52,13 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     using var client = new FunctionInvokingChatClient(new OneToolCall(tool.Name, arguments));
     var response = await client.GetResponseAsync("Go.", new ChatOptions { Tools = [tool] });
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
+}
+
+// Waits for Enter, so each example appears when you're ready to talk about it.
+static void Pause()
+{
+    Console.Write("\n[Enter for the next example]");
+    Console.ReadLine();
 }
 
 static void Show(string title, object? value) =>

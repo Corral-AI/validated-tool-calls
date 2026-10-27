@@ -23,6 +23,7 @@ var orderCatering = new ValidatingAIFunction(
 // No list in the schema any more: the model can't see the menu, so give it a get_menu tool too.
 Show("What the model sees", orderCatering.JsonSchema);
 
+Pause();
 Show("order_catering(chocolate_fountain, 1)",
     await WhatTheModelGets(orderCatering, new { item = "chocolate_fountain", quantity = 1 }));
 
@@ -30,6 +31,7 @@ Show("order_catering(chocolate_fountain, 1)",
 await http.PostAsJsonAsync("menu", new MenuEntry("chocolate_fountain", "Chocolate fountain", 250m, ["gluten", "nuts"]));
 await menu.RefreshAsync();
 
+Pause();
 Show("order_catering(chocolate_fountain, 1), after the caterer adds it",
     await WhatTheModelGets(orderCatering, new { item = "chocolate_fountain", quantity = 1 }));
 
@@ -52,6 +54,13 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     using var client = new FunctionInvokingChatClient(new OneToolCall(tool.Name, arguments));
     var response = await client.GetResponseAsync("Go.", new ChatOptions { Tools = [tool] });
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
+}
+
+// Waits for Enter, so each example appears when you're ready to talk about it.
+static void Pause()
+{
+    Console.Write("\n[Enter for the next example]");
+    Console.ReadLine();
 }
 
 static void Show(string title, object? value) =>
