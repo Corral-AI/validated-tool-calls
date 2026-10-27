@@ -19,7 +19,7 @@ public static class EnumStage
 // Stage 2: a regular expression. It goes into the schema as "pattern" and is never checked.
 public static class RegexStage
 {
-    [Description("The Church of England's question: cake or death?")]
+    [Description("Cake or death?")]
     public static string CakeOrDeath(
         [Description("Your choice.")] [RegularExpression("^(cake|death)$")] string choice) =>
         $"You chose {choice}.";
