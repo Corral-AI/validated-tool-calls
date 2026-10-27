@@ -1,17 +1,68 @@
-#:project ../src/ToolValidation
-// Step 1: a vanilla Agent Framework tool with the menu as an enum.
+#:package Microsoft.Extensions.AI@10.11.0
+// Step 1: a plain tool, made the way Agent Framework makes every tool.
+using System.ComponentModel;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using Microsoft.Extensions.AI;
-using ToolValidation;
 
-var orderCatering = AIFunctionFactory.Create(EnumStage.OrderCatering, new AIFunctionFactoryOptions { Name = "order_catering" });
+var orderCatering = AIFunctionFactory.Create(OrderCatering, new AIFunctionFactoryOptions { Name = "order_catering" });
 
 // This is all the model knows about the tool. The enum names are the only "display" it gets.
-Demo.Show("What the model sees", orderCatering.JsonSchema);
+Show("What the model sees", orderCatering.JsonSchema);
 
-// A good call.
-Demo.Show("order_catering(FruitPlatter, 4)",
-    await Demo.WhatTheModelGets(orderCatering, new { item = "FruitPlatter", quantity = 4 }));
+Show("order_catering(FruitPlatter, 4)",
+    await WhatTheModelGets(orderCatering, new { item = "FruitPlatter", quantity = 4 }));
 
-// A value that isn't in the enum. Binding fails before your code runs, and this is all the model is told.
-Demo.Show("order_catering(ChocolateFountain, 1)",
-    await Demo.WhatTheModelGets(orderCatering, new { item = "ChocolateFountain", quantity = 1 }));
+// A value that isn't in the enum. Binding fails before OrderCatering runs, and this is all the model is told.
+Show("order_catering(ChocolateFountain, 1)",
+    await WhatTheModelGets(orderCatering, new { item = "ChocolateFountain", quantity = 1 }));
+
+// ── The tool ─────────────────────────────────────────────────────────────
+
+[Description("Order catering for the company picnic.")]
+static string OrderCatering(
+    [Description("A dish from the menu.")] MenuItem item,
+    [Description("How many to order.")] int quantity) =>
+    $"Ordered {quantity} x {item}.";
+
+// ── Plumbing ─────────────────────────────────────────────────────────────
+
+// Has a stand-in model call the tool once, through the real FunctionInvokingChatClient,
+// and returns exactly what the model is sent back.
+static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
+{
+    using var client = new FunctionInvokingChatClient(new OneToolCall(tool.Name, arguments));
+    var response = await client.GetResponseAsync("Go.", new ChatOptions { Tools = [tool] });
+    return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
+}
+
+static void Show(string title, object? value) =>
+    Console.WriteLine($"\n── {title}\n{(value is string s ? s : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))}");
+
+// The menu, as an enum.
+enum MenuItem { GfSandwichPlatter, SandwichPlatter, FruitPlatter, CheeseBoard, LemonadeJug }
+
+// A stand-in for a model: it calls one tool with the arguments you give it, then stops.
+sealed class OneToolCall(string tool, object arguments) : IChatClient
+{
+    private bool _called;
+
+    public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        if (_called)
+        {
+            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "Done.")));
+        }
+
+        _called = true;
+        var args = JsonSerializer.SerializeToElement(arguments).Deserialize<Dictionary<string, object?>>();
+        return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, [new FunctionCallContent("call-1", tool, args)])));
+    }
+
+    public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    public object? GetService(Type serviceType, object? serviceKey = null) => null;
+
+    public void Dispose() { }
+}

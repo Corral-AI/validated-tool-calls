@@ -20,7 +20,7 @@ results, and gives the model RFC 9457 problem details it can act on.
 | `src/ToolValidation/Menu.cs` | The menu client and `[OnMenu]`, a validation attribute that checks values against the API at run time. |
 | `src/MenuApi` | The caterer's menu as a minimal API. `POST /menu` adds a dish live. |
 | `src/CateringChat` | A chat CLI against a real model that prints every tool call and what the model gets back. |
-| `walkthrough/` | Five C# file-based apps, one per step, using a scripted model so they run the same every time. |
+| `walkthrough/` | Five C# file-based apps, one per step. Each is self-contained, with every line of code it uses in the one file, and uses a stand-in model that makes one scripted call, so it runs the same every time. |
 
 ## The walkthrough
 
