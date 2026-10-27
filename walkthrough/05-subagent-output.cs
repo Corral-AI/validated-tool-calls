@@ -24,8 +24,15 @@ var cateringSuggestions = new ValidatingAIFunction(
 Show("What the model sees", cateringSuggestions.JsonSchema);
 
 // The calling agent gets problem details, not the chef's fantasy.
-Show("catering_suggestions(40, [Nuts, Gluten])",
+Show("catering_suggestions(40, [Nuts, Gluten]), flamboyant chef",
     await WhatTheModelGets(cateringSuggestions, new { headcount = 40, allergies = new[] { "Nuts", "Gluten" } }));
+
+// A sensible chef: everything on the menu, at the caterer's prices. Validation passes it straight through.
+var sensibleSuggestions = new ValidatingAIFunction(
+    AIFunctionFactory.Create(SensibleCateringSuggestions, new AIFunctionFactoryOptions { Name = "catering_suggestions" }), services);
+
+Show("catering_suggestions(40, [Nuts, Gluten]), sensible chef",
+    await WhatTheModelGets(sensibleSuggestions, new { headcount = 40, allergies = new[] { "Nuts", "Gluten" } }));
 
 // ── The tool ─────────────────────────────────────────────────────────────
 
@@ -39,6 +46,17 @@ static SuggestionList CateringSuggestions(
     [
         new Suggestion("chocolate_fountain", 1, 500m),
         new Suggestion("fruit_platter", headcount / 10, 25m),
+    ]);
+
+// The same tool from a chef who read the menu.
+[Description("Ask the chef for catering suggestions for the picnic.")]
+static SuggestionList SensibleCateringSuggestions(
+    [Description("How many people are coming.")] [Range(1, 500)] int headcount,
+    [Description("Allergies to avoid.")] Allergen[] allergies) =>
+    new(
+    [
+        new Suggestion("gf_sandwich_platter", headcount / 10, 60m),
+        new Suggestion("fruit_platter", headcount / 10, 30m),
     ]);
 
 // ── Plumbing ─────────────────────────────────────────────────────────────
