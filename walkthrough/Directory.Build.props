@@ -1,0 +1,9 @@
+<Project>
+  <!-- Shared by every walkthrough step (dotnet run 01-what-the-model-sees.cs). -->
+  <PropertyGroup>
+    <!-- File-based apps default to AOT-ready settings; the demos use reflection-based JSON like any normal app. -->
+    <PublishAot>false</PublishAot>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <NoWarn>$(NoWarn);IL2026;IL3050</NoWarn>
+  </PropertyGroup>
+</Project>

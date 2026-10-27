@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CateringChat/CateringChat.csproj" />
+    <Project Path="src/MenuApi/MenuApi.csproj" />
+    <Project Path="src/ToolValidation/ToolValidation.csproj" />
+  </Folder>
+</Solution>
