@@ -5,7 +5,7 @@ runs them. A model that ignores `[RegularExpression]` or `[Range]` reaches your 
 a model that sends a bad enum value is told only `Error: Function failed.`
 
 TypeScript frameworks enforce their schemas. The Vercel AI SDK validates tool input against its Zod
-or JSON schema and sends failed calls back to the model, and Mastra validates tool input and output.
+or JSON schema and sends failed calls back to the model.
 
 This repo closes the gap for Microsoft Agent Framework with
 [MiniValidation](https://github.com/DamianEdwards/MiniValidation): it validates tool arguments and
