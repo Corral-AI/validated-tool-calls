@@ -17,15 +17,13 @@ var cakeOrDeath = new ValidatingAIFunction(
 Show("What the model sees", cakeOrDeath.JsonSchema);
 
 // CakeOrDeath never runs. The model gets problem details it can act on.
-Pause();
-Show("cake_or_death(chicken)", await WhatTheModelGets(cakeOrDeath, new { choice = "chicken" }));
+Example("cake_or_death(chicken)", await WhatTheModelGets(cakeOrDeath, new { choice = "chicken" }));
 
 var orderCatering = new ValidatingAIFunction(
     AIFunctionFactory.Create(OrderCatering, new AIFunctionFactoryOptions { Name = "order_catering" }));
 
 // The enum case too: "Error: Function failed." becomes a list of what's allowed.
-Pause();
-Show("order_catering(ChocolateFountain, 1)",
+Example("order_catering(ChocolateFountain, 1)",
     await WhatTheModelGets(orderCatering, new { item = "ChocolateFountain", quantity = 1 }));
 
 // The catch: both lists are compiled in. A new dish means a redeploy, and every customer gets the same menu.
@@ -54,15 +52,18 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
 }
 
-// Waits for Enter, so each example appears when you're ready to talk about it.
-static void Pause()
+// Prints the tool call, waits for Enter, then shows what the model gets back.
+static void Example(string call, object? whatTheModelGets)
 {
-    Console.Write("\n[Enter for the next example]");
+    Console.Write($"\n── {call}");
     Console.ReadLine();
+    Console.WriteLine(Json(whatTheModelGets));
 }
 
-static void Show(string title, object? value) =>
-    Console.WriteLine($"\n── {title}\n{(value is string s ? s : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))}");
+static void Show(string title, object? value) => Console.WriteLine($"\n── {title}\n{Json(value)}");
+
+static string Json(object? value) => value is string s ? s
+    : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
 // A stand-in for a model: it calls one tool with the arguments you give it, then stops.
 sealed class OneToolCall(string tool, object arguments) : IChatClient

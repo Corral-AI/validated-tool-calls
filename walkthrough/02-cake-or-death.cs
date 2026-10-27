@@ -11,12 +11,10 @@ var cakeOrDeath = AIFunctionFactory.Create(CakeOrDeath, new AIFunctionFactoryOpt
 // [RegularExpression("^(cake|death)$")] shows up as "pattern".
 Show("What the model sees", cakeOrDeath.JsonSchema);
 
-Pause();
-Show("cake_or_death(cake)", await WhatTheModelGets(cakeOrDeath, new { choice = "cake" }));
+Example("cake_or_death(cake)", await WhatTheModelGets(cakeOrDeath, new { choice = "cake" }));
 
 // "Or chicken?" Nothing checks the pattern, so CakeOrDeath gets it.
-Pause();
-Show("cake_or_death(chicken)", await WhatTheModelGets(cakeOrDeath, new { choice = "chicken" }));
+Example("cake_or_death(chicken)", await WhatTheModelGets(cakeOrDeath, new { choice = "chicken" }));
 
 // ── The tool ─────────────────────────────────────────────────────────────
 
@@ -36,15 +34,18 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
 }
 
-// Waits for Enter, so each example appears when you're ready to talk about it.
-static void Pause()
+// Prints the tool call, waits for Enter, then shows what the model gets back.
+static void Example(string call, object? whatTheModelGets)
 {
-    Console.Write("\n[Enter for the next example]");
+    Console.Write($"\n── {call}");
     Console.ReadLine();
+    Console.WriteLine(Json(whatTheModelGets));
 }
 
-static void Show(string title, object? value) =>
-    Console.WriteLine($"\n── {title}\n{(value is string s ? s : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))}");
+static void Show(string title, object? value) => Console.WriteLine($"\n── {title}\n{Json(value)}");
+
+static string Json(object? value) => value is string s ? s
+    : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
 // A stand-in for a model: it calls one tool with the arguments you give it, then stops.
 sealed class OneToolCall(string tool, object arguments) : IChatClient

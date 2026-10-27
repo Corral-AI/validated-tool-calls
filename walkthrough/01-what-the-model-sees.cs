@@ -10,13 +10,11 @@ var orderCatering = AIFunctionFactory.Create(OrderCatering, new AIFunctionFactor
 // This is all the model knows about the tool. The enum names are the only "display" it gets.
 Show("What the model sees", orderCatering.JsonSchema);
 
-Pause();
-Show("order_catering(FruitPlatter, 4)",
+Example("order_catering(FruitPlatter, 4)",
     await WhatTheModelGets(orderCatering, new { item = "FruitPlatter", quantity = 4 }));
 
 // A value that isn't in the enum. Binding fails before OrderCatering runs, and this is all the model is told.
-Pause();
-Show("order_catering(ChocolateFountain, 1)",
+Example("order_catering(ChocolateFountain, 1)",
     await WhatTheModelGets(orderCatering, new { item = "ChocolateFountain", quantity = 1 }));
 
 // ── The tool ─────────────────────────────────────────────────────────────
@@ -38,15 +36,18 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
 }
 
-// Waits for Enter, so each example appears when you're ready to talk about it.
-static void Pause()
+// Prints the tool call, waits for Enter, then shows what the model gets back.
+static void Example(string call, object? whatTheModelGets)
 {
-    Console.Write("\n[Enter for the next example]");
+    Console.Write($"\n── {call}");
     Console.ReadLine();
+    Console.WriteLine(Json(whatTheModelGets));
 }
 
-static void Show(string title, object? value) =>
-    Console.WriteLine($"\n── {title}\n{(value is string s ? s : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))}");
+static void Show(string title, object? value) => Console.WriteLine($"\n── {title}\n{Json(value)}");
+
+static string Json(object? value) => value is string s ? s
+    : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
 // The menu, as an enum.
 enum MenuItem { GfSandwichPlatter, SandwichPlatter, FruitPlatter, CheeseBoard, LemonadeJug }

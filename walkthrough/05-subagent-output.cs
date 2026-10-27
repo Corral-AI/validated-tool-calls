@@ -24,16 +24,14 @@ var cateringSuggestions = new ValidatingAIFunction(
 Show("What the model sees", cateringSuggestions.JsonSchema);
 
 // The calling agent gets problem details, not the chef's fantasy.
-Pause();
-Show("catering_suggestions(40, [Nuts, Gluten]), flamboyant chef",
+Example("catering_suggestions(40, [Nuts, Gluten]), flamboyant chef",
     await WhatTheModelGets(cateringSuggestions, new { headcount = 40, allergies = new[] { "Nuts", "Gluten" } }));
 
 // A sensible chef: everything on the menu, at the caterer's prices. Validation passes it straight through.
 var sensibleSuggestions = new ValidatingAIFunction(
     AIFunctionFactory.Create(SensibleCateringSuggestions, new AIFunctionFactoryOptions { Name = "catering_suggestions" }), services);
 
-Pause();
-Show("catering_suggestions(40, [Nuts, Gluten]), sensible chef",
+Example("catering_suggestions(40, [Nuts, Gluten]), sensible chef",
     await WhatTheModelGets(sensibleSuggestions, new { headcount = 40, allergies = new[] { "Nuts", "Gluten" } }));
 
 // ── The tool ─────────────────────────────────────────────────────────────
@@ -72,15 +70,18 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
 }
 
-// Waits for Enter, so each example appears when you're ready to talk about it.
-static void Pause()
+// Prints the tool call, waits for Enter, then shows what the model gets back.
+static void Example(string call, object? whatTheModelGets)
 {
-    Console.Write("\n[Enter for the next example]");
+    Console.Write($"\n── {call}");
     Console.ReadLine();
+    Console.WriteLine(Json(whatTheModelGets));
 }
 
-static void Show(string title, object? value) =>
-    Console.WriteLine($"\n── {title}\n{(value is string s ? s : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))}");
+static void Show(string title, object? value) => Console.WriteLine($"\n── {title}\n{Json(value)}");
+
+static string Json(object? value) => value is string s ? s
+    : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
 // A stand-in for a model: it calls one tool with the arguments you give it, then stops.
 sealed class OneToolCall(string tool, object arguments) : IChatClient

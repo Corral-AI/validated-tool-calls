@@ -23,16 +23,14 @@ var orderCatering = new ValidatingAIFunction(
 // No list in the schema any more: the model can't see the menu, so give it a get_menu tool too.
 Show("What the model sees", orderCatering.JsonSchema);
 
-Pause();
-Show("order_catering(chocolate_fountain, 1)",
+Example("order_catering(chocolate_fountain, 1)",
     await WhatTheModelGets(orderCatering, new { item = "chocolate_fountain", quantity = 1 }));
 
 // The caterer adds a dish. No redeploy, no change to the agent.
 await http.PostAsJsonAsync("menu", new MenuEntry("chocolate_fountain", "Chocolate fountain", 250m, ["gluten", "nuts"]));
 await menu.RefreshAsync();
 
-Pause();
-Show("order_catering(chocolate_fountain, 1), after the caterer adds it",
+Example("order_catering(chocolate_fountain, 1), after the caterer adds it",
     await WhatTheModelGets(orderCatering, new { item = "chocolate_fountain", quantity = 1 }));
 
 await http.DeleteAsync("menu/chocolate_fountain");
@@ -56,15 +54,18 @@ static async Task<object?> WhatTheModelGets(AIFunction tool, object arguments)
     return response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Last().Result;
 }
 
-// Waits for Enter, so each example appears when you're ready to talk about it.
-static void Pause()
+// Prints the tool call, waits for Enter, then shows what the model gets back.
+static void Example(string call, object? whatTheModelGets)
 {
-    Console.Write("\n[Enter for the next example]");
+    Console.Write($"\n── {call}");
     Console.ReadLine();
+    Console.WriteLine(Json(whatTheModelGets));
 }
 
-static void Show(string title, object? value) =>
-    Console.WriteLine($"\n── {title}\n{(value is string s ? s : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))}");
+static void Show(string title, object? value) => Console.WriteLine($"\n── {title}\n{Json(value)}");
+
+static string Json(object? value) => value is string s ? s
+    : JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
 // A stand-in for a model: it calls one tool with the arguments you give it, then stops.
 sealed class OneToolCall(string tool, object arguments) : IChatClient
